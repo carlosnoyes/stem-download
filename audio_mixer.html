@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stem Audio Mixer</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --accent: #e94560;
+    --accent2: #533483;
+    --text: #eee;
+    --text-dim: #999;
+    --green: #4ecca3;
+    --yellow: #f0c040;
+    --border: #2a2a4a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .load-btn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .load-btn:hover { background: #d63350; }
+
+  /* Transport Bar */
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .transport-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .transport-btn:hover { background: var(--accent2); }
+  .transport-btn.active { background: var(--accent); border-color: var(--accent); }
+
+  .time-display {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1.1rem;
+    background: #111;
+    padding: 6px 14px;
+    border-radius: 6px;
+    min-width: 100px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .speed-group, .viz-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+  }
+
+  .speed-group label, .viz-group label, .metro-group label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-right: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .speed-btn, .viz-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .speed-btn.active, .viz-btn.active {
+    background: var(--accent2);
+    color: white;
+    border-color: var(--accent2);
+  }
+
+  /* Metronome Controls */
+  .metro-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+
+  .metro-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .metro-toggle.active {
+    background: var(--yellow);
+    color: #111;
+    border-color: var(--yellow);
+    font-weight: 600;
+  }
+
+  .metro-input {
+    background: #111;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    width: 55px;
+    text-align: center;
+    font-family: 'Consolas', monospace;
+  }
+
+  .metro-select {
+    background: #111;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  /* Loop indicator */
+  .loop-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+
+  .loop-info {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .loop-clear-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+  .loop-clear-btn:hover { background: var(--accent); color: white; }
+
+  /* Visualization */
+  .viz-container {
+    position: relative;
+    margin: 0;
+    background: #0a0a1a;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .viz-container canvas {
+    display: block;
+    width: 100%;
+    height: 200px;
+  }
+
+  /* Beat ruler */
+  .beat-ruler {
+    height: 28px;
+    background: #0d0d1d;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .beat-ruler canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .playhead-line {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Stems area */
+  .stems-container {
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stems-container .empty-msg {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 1rem;
+  }
+
+  .stem-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    transition: opacity 0.3s;
+  }
+  .stem-row.muted { opacity: 0.45; }
+
+  .stem-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 140px;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stem-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    background: #333;
+    color: #777;
+  }
+  .stem-btn.mute-on {
+    background: #c0392b;
+    color: white;
+  }
+  .stem-btn.solo-on {
+    background: var(--yellow);
+    color: #111;
+  }
+
+  .stem-volume-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 160px;
+  }
+
+  .stem-volume-group label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+
+  .stem-volume-group .vol-value {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    min-width: 30px;
+    text-align: right;
+    font-family: monospace;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: #333;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--green);
+    cursor: pointer;
+  }
+
+  .stem-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .stem-filter-group label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .filter-toggle {
+    background: #333;
+    border: none;
+    color: #777;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: all 0.2s;
+  }
+  .filter-toggle.active {
+    background: var(--accent2);
+    color: white;
+  }
+
+  .filter-range-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .freq-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    min-width: 42px;
+    text-align: center;
+    font-family: monospace;
+  }
+
+  .filter-preset-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    transition: all 0.2s;
+  }
+  .filter-preset-btn:hover { background: var(--accent2); color: white; }
+
+  /* Mute/Unmute All bar */
+  .stems-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 8px 24px 0;
+  }
+
+  .stems-toolbar button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+  }
+  .stems-toolbar button:hover { background: var(--accent2); color: white; }
+
+  /* Master volume */
+  .master-volume {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+
+  .master-volume label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  /* Zoom info */
+  .zoom-info {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    pointer-events: none;
+    z-index: 5;
+    font-family: monospace;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Stem Mixer</h1>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="load-btn" id="loadFolderBtn">Load Stems Folder</button>
+    <button class="load-btn" style="background:var(--surface2);" id="loadFilesBtn">Load Files</button>
+  </div>
+</header>
+
+<div class="transport">
+  <button class="transport-btn" id="playBtn" title="Play/Pause">&#9654;</button>
+  <button class="transport-btn" id="stopBtn" title="Stop">&#9632;</button>
+  <div class="time-display" id="timeDisplay">0:00.0</div>
+
+  <div class="speed-group">
+    <label>Speed</label>
+    <button class="speed-btn" data-speed="0.25">0.25x</button>
+    <button class="speed-btn" data-speed="0.5">0.5x</button>
+    <button class="speed-btn active" data-speed="1">1x</button>
+    <button class="speed-btn" data-speed="2">2x</button>
+  </div>
+
+  <div class="viz-group">
+    <label>Viz</label>
+    <button class="viz-btn active" data-viz="energy">Energy</button>
+    <button class="viz-btn" data-viz="spectrogram">Spectro</button>
+  </div>
+
+  <div class="metro-group">
+    <label>Metronome</label>
+    <button class="metro-toggle" id="metroToggle">OFF</button>
+    <input type="number" class="metro-input" id="metroBpm" value="120" min="20" max="300" title="BPM">
+    <label style="font-size:0.7rem;">BPM</label>
+    <button class="metro-toggle" id="autoBpmBtn" title="Auto-detect BPM from audio energy" style="font-size:0.8rem;">Auto</button>
+    <select class="metro-select" id="metroTimeSig" title="Time Signature">
+      <option value="4/4">4/4</option>
+      <option value="3/4">3/4</option>
+      <option value="6/8">6/8</option>
+      <option value="2/4">2/4</option>
+      <option value="5/4">5/4</option>
+      <option value="7/8">7/8</option>
+    </select>
+  </div>
+
+  <div class="loop-group" id="loopGroup" style="display:none;">
+    <label style="font-size:0.7rem;color:var(--green);">LOOP</label>
+    <span class="loop-info" id="loopInfo"></span>
+    <button class="loop-clear-btn" id="loopClearBtn">Clear Loop</button>
+  </div>
+
+  <div class="master-volume">
+    <label>Master</label>
+    <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.8" style="width:100px;">
+    <span style="font-size:0.7rem;color:var(--text-dim);min-width:30px;font-family:monospace;" id="masterVolVal">80%</span>
+  </div>
+</div>
+
+<div class="viz-container" id="vizContainer">
+  <canvas id="vizCanvas"></canvas>
+  <div class="playhead-line" id="vizPlayhead" style="left:0;"></div>
+  <div class="zoom-info" id="zoomInfo"></div>
+</div>
+
+<div class="beat-ruler" id="beatRuler">
+  <canvas id="rulerCanvas"></canvas>
+  <div class="playhead-line" id="rulerPlayhead" style="left:0;"></div>
+</div>
+
+<div class="stems-toolbar" id="stemsToolbar" style="display:none;">
+  <button id="muteAllBtn">Mute All</button>
+  <button id="unmuteAllBtn">Unmute All</button>
+  <button id="clearSoloBtn">Clear Solo</button>
+</div>
+
+<div class="stems-container" id="stemsContainer">
+  <div class="empty-msg">Load a folder of audio stems to get started.<br><small>Supports .mp3, .wav, .ogg, .flac, .aac, .m4a, .webm</small></div>
+</div>
+
+<script>
+// ===== Audio Engine =====
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let masterGain = null;
+let analyserNode = null;
+
+const stems = [];
+let isPlaying = false;
+let startTime = 0;
+let pauseOffset = 0;
+let playbackRate = 1;
+let totalDuration = 0;
+
+// Visualization
+let vizMode = 'energy';
+let vizAnimId = null;
+
+// Spectrogram: time-indexed storage
+// Map from time-slot index to frequency data
+const spectrogramMap = new Map();
+const SPECTRO_SLOT_DURATION = 0.005; // 5ms per slot (was 20ms)
+
+// Energy visualization: precomputed from raw audio buffers
+let energyData = null;       // Float32Array of RMS values
+let energyOnsetData = null;  // Float32Array of onset/transient strength
+let energySampleRate = 0;    // samples per second in energyData
+const ENERGY_WINDOW_MS = 5;  // 5ms window for high resolution
+
+// Metronome
+let metronomeOn = false;
+let metroBpm = 120;
+let metroBeatsPerMeasure = 4;
+let metroBeatUnit = 4;
+let metronomeIntervalId = null;
+let nextMetronomeBeatTime = 0;
+let metronomeScheduleAhead = 0.1;
+let metronomeLookAhead = 25;
+let metronomeQueue = [];
+
+// Loop
+let loopStartBeat = null;
+let loopEndBeat = null;
+let loopCheckIntervalId = null;
+
+// Zoom & Pan
+let viewStart = 0;        // visible window start time (seconds)
+let viewDuration = 0;     // visible window duration (seconds) — 0 means show all
+let isPanning = false;
+let panStartX = 0;
+let panStartViewStart = 0;
+
+function getViewStart() { return viewStart; }
+function getViewEnd() {
+  const vd = viewDuration > 0 ? viewDuration : totalDuration;
+  return Math.min(viewStart + vd, totalDuration);
+}
+function getViewDuration() {
+  return viewDuration > 0 ? viewDuration : totalDuration;
+}
+
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new AudioCtx();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = parseFloat(document.getElementById('masterVolume').value);
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 2048;
+    masterGain.connect(analyserNode);
+    analyserNode.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// ===== File Loading =====
+const SUPPORTED = ['.mp3','.wav','.ogg','.flac','.aac','.m4a','.webm'];
+
+document.getElementById('loadFolderBtn').addEventListener('click', async () => {
+  try {
+    const dirHandle = await window.showDirectoryPicker();
+    const files = [];
+    for await (const entry of dirHandle.values()) {
+      if (entry.kind === 'file') {
+        const ext = '.' + entry.name.split('.').pop().toLowerCase();
+        if (SUPPORTED.includes(ext)) {
+          const file = await entry.getFile();
+          files.push(file);
+        }
+      }
+    }
+    if (files.length === 0) { alert('No supported audio files found in folder.'); return; }
+    files.sort((a, b) => a.name.localeCompare(b.name));
+    await loadFiles(files);
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error(e);
+  }
+});
+
+document.getElementById('loadFilesBtn').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.accept = SUPPORTED.join(',');
+  input.onchange = async () => {
+    const files = Array.from(input.files).filter(f => {
+      const ext = '.' + f.name.split('.').pop().toLowerCase();
+      return SUPPORTED.includes(ext);
+    });
+    if (files.length === 0) { alert('No supported audio files selected.'); return; }
+    files.sort((a, b) => a.name.localeCompare(b.name));
+    await loadFiles(files);
+  };
+  input.click();
+});
+
+async function loadFiles(files) {
+  ensureAudioCtx();
+  stopPlayback();
+  stems.length = 0;
+  spectrogramMap.clear();
+
+  const container = document.getElementById('stemsContainer');
+  container.innerHTML = '<div class="empty-msg">Loading stems...</div>';
+
+  for (const file of files) {
+    try {
+      const arrayBuf = await file.arrayBuffer();
+      const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+      stems.push({
+        name: file.name.replace(/\.[^.]+$/, ''),
+        buffer: audioBuf,
+        sourceNode: null,
+        gainNode: null,
+        filterNode: null,
+        muted: false,
+        solo: false,
+        volume: 1,
+        filterOn: false,
+        lowFreq: 20,
+        highFreq: 20000,
+      });
+    } catch (e) {
+      console.error('Failed to decode', file.name, e);
+    }
+  }
+
+  totalDuration = Math.max(...stems.map(s => s.buffer.duration));
+  pauseOffset = 0;
+  viewStart = 0;
+  viewDuration = 0; // show all
+  computeEnergyData();
+  renderStems();
+  startVisualization();
+}
+
+let energyComputeTimer = null;
+
+function scheduleEnergyRecompute() {
+  if (energyComputeTimer) clearTimeout(energyComputeTimer);
+  energyComputeTimer = setTimeout(() => computeEnergyData(), 80);
+}
+
+function computeEnergyData() {
+  if (stems.length === 0 || totalDuration === 0) {
+    energyData = null;
+    energyOnsetData = null;
+    return;
+  }
+
+  const anySolo = stems.some(s => s.solo);
+  const sampleRate = stems[0].buffer.sampleRate;
+  const windowSamples = Math.floor(sampleRate * ENERGY_WINDOW_MS / 1000);
+  const totalSamples = Math.floor(totalDuration * sampleRate);
+  const numWindows = Math.ceil(totalSamples / windowSamples);
+  energySampleRate = 1000 / ENERGY_WINDOW_MS;
+
+  energyData = new Float32Array(numWindows);
+  energyOnsetData = new Float32Array(numWindows);
+
+  // Mix audible stems down to mono, respecting mute/solo/volume/filter
+  for (let w = 0; w < numWindows; w++) {
+    const startSample = w * windowSamples;
+    const endSample = Math.min(startSample + windowSamples, totalSamples);
+    let sumSq = 0;
+    let count = 0;
+
+    for (const stem of stems) {
+      // Skip muted stems; if any solo exists, skip non-soloed
+      const muted = stem.muted || (anySolo && !stem.solo);
+      if (muted) continue;
+
+      const vol = stem.volume;
+      if (vol === 0) continue;
+
+      const buf = stem.buffer;
+      const numChannels = buf.numberOfChannels;
+      for (let ch = 0; ch < numChannels; ch++) {
+        const channelData = buf.getChannelData(ch);
+        for (let s = startSample; s < endSample && s < channelData.length; s++) {
+          // Apply volume; filter is approximated below
+          const sample = channelData[s] * vol;
+          sumSq += sample * sample;
+          count++;
+        }
+      }
+    }
+
+    energyData[w] = count > 0 ? Math.sqrt(sumSq / count) : 0;
+  }
+
+  // If any stem has a filter active, recompute using offline rendering for accuracy
+  const anyFilter = stems.some(s => s.filterOn && !(s.muted || (anySolo && !s.solo)));
+  if (anyFilter) {
+    computeEnergyFiltered();
+    return;
+  }
+
+  finalizeEnergy(numWindows);
+}
+
+async function computeEnergyFiltered() {
+  const sampleRate = stems[0].buffer.sampleRate;
+  const totalSamples = Math.floor(totalDuration * sampleRate);
+  const anySolo = stems.some(s => s.solo);
+
+  // Render the audible mix offline with filters applied
+  const offCtx = new OfflineAudioContext(1, totalSamples, sampleRate);
+
+  for (const stem of stems) {
+    const muted = stem.muted || (anySolo && !stem.solo);
+    if (muted || stem.volume === 0) continue;
+
+    const source = offCtx.createBufferSource();
+    source.buffer = stem.buffer;
+
+    const gain = offCtx.createGain();
+    gain.gain.value = stem.volume;
+    source.connect(gain);
+
+    if (stem.filterOn) {
+      const hp = offCtx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = stem.lowFreq;
+      hp.Q.value = 0.7;
+      const lp = offCtx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = stem.highFreq;
+      lp.Q.value = 0.7;
+      gain.connect(hp);
+      hp.connect(lp);
+      lp.connect(offCtx.destination);
+    } else {
+      gain.connect(offCtx.destination);
+    }
+
+    source.start(0);
+  }
+
+  try {
+    const rendered = await offCtx.startRendering();
+    const channelData = rendered.getChannelData(0);
+    const windowSamples = Math.floor(sampleRate * ENERGY_WINDOW_MS / 1000);
+    const numWindows = Math.ceil(totalSamples / windowSamples);
+
+    energyData = new Float32Array(numWindows);
+    energyOnsetData = new Float32Array(numWindows);
+
+    for (let w = 0; w < numWindows; w++) {
+      const start = w * windowSamples;
+      const end = Math.min(start + windowSamples, totalSamples);
+      let sumSq = 0;
+      for (let s = start; s < end; s++) {
+        sumSq += channelData[s] * channelData[s];
+      }
+      energyData[w] = Math.sqrt(sumSq / (end - start));
+    }
+
+    finalizeEnergy(numWindows);
+  } catch (e) {
+    console.error('Offline render failed', e);
+  }
+}
+
+function finalizeEnergy(numWindows) {
+  // Normalize energy to 0..1
+  let maxEnergy = 0;
+  for (let i = 0; i < numWindows; i++) {
+    if (energyData[i] > maxEnergy) maxEnergy = energyData[i];
+  }
+  if (maxEnergy > 0) {
+    for (let i = 0; i < numWindows; i++) {
+      energyData[i] /= maxEnergy;
+    }
+  }
+
+  // Onset detection
+  for (let i = 1; i < numWindows; i++) {
+    const diff = energyData[i] - energyData[i - 1];
+    energyOnsetData[i] = diff > 0 ? diff : 0;
+  }
+  energyOnsetData[0] = energyData[0];
+
+  let maxOnset = 0;
+  for (let i = 0; i < numWindows; i++) {
+    if (energyOnsetData[i] > maxOnset) maxOnset = energyOnsetData[i];
+  }
+  if (maxOnset > 0) {
+    for (let i = 0; i < numWindows; i++) {
+      energyOnsetData[i] /= maxOnset;
+    }
+  }
+}
+
+async function detectBPM() {
+  if (stems.length === 0 || totalDuration === 0) return null;
+
+  const sampleRate = stems[0].buffer.sampleRate;
+  const totalSamples = Math.floor(totalDuration * sampleRate);
+  const anySolo = stems.some(s => s.solo);
+
+  // Render all audible stems through a 3kHz highpass to isolate hi-hats/snare
+  const offCtx = new OfflineAudioContext(1, totalSamples, sampleRate);
+
+  let hasAudible = false;
+  for (const stem of stems) {
+    const muted = stem.muted || (anySolo && !stem.solo);
+    if (muted || stem.volume === 0) continue;
+    hasAudible = true;
+
+    const source = offCtx.createBufferSource();
+    source.buffer = stem.buffer;
+
+    const gain = offCtx.createGain();
+    gain.gain.value = stem.volume;
+    source.connect(gain);
+
+    // Highpass at 3kHz to focus on transients (hi-hats, snare attack)
+    const hp = offCtx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 3000;
+    hp.Q.value = 0.7;
+    gain.connect(hp);
+    hp.connect(offCtx.destination);
+
+    source.start(0);
+  }
+
+  if (!hasAudible) return null;
+
+  let rendered;
+  try {
+    rendered = await offCtx.startRendering();
+  } catch (e) {
+    console.error('BPM offline render failed', e);
+    return null;
+  }
+
+  const channelData = rendered.getChannelData(0);
+  const windowMs = ENERGY_WINDOW_MS;
+  const windowSamples = Math.floor(sampleRate * windowMs / 1000);
+  const numWindows = Math.ceil(totalSamples / windowSamples);
+  const sampleRateHz = 1000 / windowMs;
+
+  // Compute RMS energy per window from highpassed signal
+  const hfEnergy = new Float32Array(numWindows);
+  for (let w = 0; w < numWindows; w++) {
+    const start = w * windowSamples;
+    const end = Math.min(start + windowSamples, totalSamples);
+    let sumSq = 0;
+    for (let s = start; s < end; s++) {
+      sumSq += channelData[s] * channelData[s];
+    }
+    hfEnergy[w] = Math.sqrt(sumSq / (end - start));
+  }
+
+  // Normalize
+  let maxE = 0;
+  for (let i = 0; i < numWindows; i++) if (hfEnergy[i] > maxE) maxE = hfEnergy[i];
+  if (maxE > 0) for (let i = 0; i < numWindows; i++) hfEnergy[i] /= maxE;
+
+  // Onset detection on highpassed energy
+  const onsets = new Float32Array(numWindows);
+  for (let i = 1; i < numWindows; i++) {
+    const diff = hfEnergy[i] - hfEnergy[i - 1];
+    onsets[i] = diff > 0 ? diff : 0;
+  }
+  onsets[0] = hfEnergy[0];
+  let maxO = 0;
+  for (let i = 0; i < numWindows; i++) if (onsets[i] > maxO) maxO = onsets[i];
+  if (maxO > 0) for (let i = 0; i < numWindows; i++) onsets[i] /= maxO;
+
+  // Autocorrelation on onset data
+  const minLag = Math.floor(sampleRateHz * 60 / 400);
+  const maxLag = Math.ceil(sampleRateHz * 60 / 40);
+  const analyzeLen = Math.min(numWindows, Math.floor(30 * sampleRateHz));
+
+  const corr = new Float32Array(maxLag + 1);
+  for (let lag = minLag; lag <= maxLag && lag < analyzeLen; lag++) {
+    let sum = 0;
+    const count = analyzeLen - lag;
+    for (let i = 0; i < count; i++) {
+      sum += onsets[i] * onsets[i + lag];
+    }
+    corr[lag] = sum / count;
+  }
+
+  // Find best lag with musical weighting
+  let bestLag = minLag;
+  let bestVal = -Infinity;
+  for (let lag = minLag; lag <= maxLag && lag < analyzeLen; lag++) {
+    const bpm = (sampleRateHz * 60) / lag;
+    let weight = 1;
+    if (bpm >= 80 && bpm <= 160) weight = 1.3;
+    else if (bpm >= 60 && bpm <= 200) weight = 1.1;
+
+    const weighted = corr[lag] * weight;
+    if (weighted > bestVal) {
+      bestVal = weighted;
+      bestLag = lag;
+    }
+  }
+
+  // Refine: check double/half tempo
+  const bestBpm = (sampleRateHz * 60) / bestLag;
+  const halfLag = Math.round(bestLag / 2);
+  const doubleLag = bestLag * 2;
+
+  if (halfLag >= minLag && halfLag <= maxLag) {
+    const halfBpm = bestBpm * 2;
+    if (halfBpm >= 80 && halfBpm <= 400 && corr[halfLag] > corr[bestLag] * 0.8) {
+      return Math.round(halfBpm);
+    }
+  }
+
+  if (doubleLag >= minLag && doubleLag <= maxLag && doubleLag < analyzeLen) {
+    const doubleBpm = bestBpm / 2;
+    if (doubleBpm >= 80 && doubleBpm <= 160 && corr[doubleLag] > corr[bestLag] * 0.9) {
+      return Math.round(doubleBpm);
+    }
+  }
+
+  return Math.round(bestBpm);
+}
+
+document.getElementById('autoBpmBtn').addEventListener('click', async () => {
+  if (stems.length === 0) {
+    alert('Load audio stems first.');
+    return;
+  }
+
+  const btn = document.getElementById('autoBpmBtn');
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  try {
+    const detected = await detectBPM();
+    if (detected) {
+      metroBpm = detected;
+      document.getElementById('metroBpm').value = detected;
+    } else {
+      alert('Could not detect BPM.');
+    }
+  } finally {
+    btn.textContent = 'Auto';
+    btn.disabled = false;
+  }
+});
+
+// ===== Playback =====
+function createSourceNodes() {
+  const anySolo = stems.some(s => s.solo);
+  for (const stem of stems) {
+    const source = audioCtx.createBufferSource();
+    source.buffer = stem.buffer;
+    source.playbackRate.value = playbackRate;
+
+    const gain = audioCtx.createGain();
+    const effectivelyMuted = stem.muted || (anySolo && !stem.solo);
+    gain.gain.value = effectivelyMuted ? 0 : stem.volume;
+
+    stem.gainNode = gain;
+    source.connect(gain);
+
+    if (stem.filterOn) {
+      const highpass = audioCtx.createBiquadFilter();
+      highpass.type = 'highpass';
+      highpass.frequency.value = stem.lowFreq;
+      highpass.Q.value = 0.7;
+
+      const lowpass = audioCtx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.value = stem.highFreq;
+      lowpass.Q.value = 0.7;
+
+      gain.connect(highpass);
+      highpass.connect(lowpass);
+      lowpass.connect(masterGain);
+      stem.filterNode = { highpass, lowpass };
+    } else {
+      gain.connect(masterGain);
+      stem.filterNode = null;
+    }
+
+    stem.sourceNode = source;
+  }
+}
+
+function startPlayback() {
+  if (stems.length === 0) return;
+  ensureAudioCtx();
+
+  createSourceNodes();
+  startTime = audioCtx.currentTime;
+
+  for (const stem of stems) {
+    stem.sourceNode.start(0, pauseOffset);
+  }
+
+  isPlaying = true;
+  document.getElementById('playBtn').innerHTML = '&#10074;&#10074;';
+  document.getElementById('playBtn').classList.add('active');
+
+  startVisualization();
+  startLoopCheck();
+  if (metronomeOn) startMetronome();
+}
+
+function pausePlayback() {
+  if (!isPlaying) return;
+  pauseOffset = getCurrentTime();
+  stopSources();
+  isPlaying = false;
+  document.getElementById('playBtn').innerHTML = '&#9654;';
+  document.getElementById('playBtn').classList.remove('active');
+  stopMetronome();
+  stopLoopCheck();
+}
+
+function stopPlayback() {
+  stopSources();
+  pauseOffset = 0;
+  isPlaying = false;
+  document.getElementById('playBtn').innerHTML = '&#9654;';
+  document.getElementById('playBtn').classList.remove('active');
+  updateTimeDisplay();
+  updatePlayheads();
+  stopMetronome();
+  stopLoopCheck();
+}
+
+function stopSources() {
+  for (const stem of stems) {
+    if (stem.sourceNode) {
+      try { stem.sourceNode.stop(); } catch (e) {}
+      stem.sourceNode = null;
+    }
+  }
+}
+
+function getCurrentTime() {
+  if (!isPlaying) return pauseOffset;
+  const elapsed = (audioCtx.currentTime - startTime) * playbackRate;
+  let t = pauseOffset + elapsed;
+  if (t >= totalDuration) t = totalDuration;
+  return t;
+}
+
+function seekTo(time) {
+  const wasPlaying = isPlaying;
+  if (isPlaying) {
+    stopSources();
+    isPlaying = false;
+  }
+  pauseOffset = Math.max(0, Math.min(time, totalDuration));
+  if (wasPlaying) startPlayback();
+  updateTimeDisplay();
+  updatePlayheads();
+}
+
+// Transport controls
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (isPlaying) pausePlayback();
+  else startPlayback();
+});
+
+document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+
+// Speed
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    playbackRate = parseFloat(btn.dataset.speed);
+    if (isPlaying) {
+      for (const stem of stems) {
+        if (stem.sourceNode) stem.sourceNode.playbackRate.value = playbackRate;
+      }
+    }
+  });
+});
+
+// Master volume
+document.getElementById('masterVolume').addEventListener('input', (e) => {
+  const val = parseFloat(e.target.value);
+  if (masterGain) masterGain.gain.value = val;
+  document.getElementById('masterVolVal').textContent = Math.round(val * 100) + '%';
+});
+
+// ===== Stem UI =====
+let stemClickHandler = null;
+let stemInputHandler = null;
+
+function renderStems() {
+  const container = document.getElementById('stemsContainer');
+  const toolbar = document.getElementById('stemsToolbar');
+
+  if (stemClickHandler) container.removeEventListener('click', stemClickHandler);
+  if (stemInputHandler) container.removeEventListener('input', stemInputHandler);
+
+  container.innerHTML = '';
+
+  if (stems.length === 0) {
+    toolbar.style.display = 'none';
+    container.innerHTML = '<div class="empty-msg">Load a folder of audio stems to get started.<br><small>Supports .mp3, .wav, .ogg, .flac, .aac, .m4a, .webm</small></div>';
+    return;
+  }
+
+  toolbar.style.display = 'flex';
+
+  stems.forEach((stem, i) => {
+    const row = document.createElement('div');
+    row.className = 'stem-row' + (stem.muted ? ' muted' : '');
+    row.dataset.index = i;
+    row.innerHTML = `
+      <span class="stem-name" title="${stem.name}">${stem.name}</span>
+      <button class="stem-btn ${stem.muted ? 'mute-on' : ''}" data-action="mute" title="Mute — silences this stem">M</button>
+      <button class="stem-btn ${stem.solo ? 'solo-on' : ''}" data-action="solo" title="Solo — hear only soloed stems">S</button>
+      <div class="stem-volume-group">
+        <label>Vol</label>
+        <input type="range" min="0" max="1" step="0.01" value="${stem.volume}" data-action="volume" style="width:100px;">
+        <span class="vol-value">${Math.round(stem.volume * 100)}%</span>
+      </div>
+      <div class="stem-filter-group">
+        <button class="filter-toggle ${stem.filterOn ? 'active' : ''}" data-action="filter-toggle">Filter</button>
+        <div class="filter-range-container">
+          <span class="freq-label" data-label="low">${formatFreq(stem.lowFreq)}</span>
+          <input type="range" min="0" max="1" step="0.001" value="${freqToSlider(stem.lowFreq)}" data-action="filter-low" style="width:80px;" title="Low cutoff">
+          <input type="range" min="0" max="1" step="0.001" value="${freqToSlider(stem.highFreq)}" data-action="filter-high" style="width:80px;" title="High cutoff">
+          <span class="freq-label" data-label="high">${formatFreq(stem.highFreq)}</span>
+        </div>
+        <button class="filter-preset-btn" data-preset="low" title="Low Pass (bass only)">Low</button>
+        <button class="filter-preset-btn" data-preset="mid" title="Mid Band">Mid</button>
+        <button class="filter-preset-btn" data-preset="high" title="High Pass (treble only)">High</button>
+        <button class="filter-preset-btn" data-preset="full" title="Full Range">Full</button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  stemClickHandler = handleStemClick;
+  stemInputHandler = handleStemInput;
+  container.addEventListener('click', stemClickHandler);
+  container.addEventListener('input', stemInputHandler);
+}
+
+// Mute All / Unmute All / Clear Solo
+document.getElementById('muteAllBtn').addEventListener('click', () => {
+  stems.forEach(s => s.muted = true);
+  updateStemGains();
+  scheduleEnergyRecompute();
+  renderStems();
+});
+
+document.getElementById('unmuteAllBtn').addEventListener('click', () => {
+  stems.forEach(s => s.muted = false);
+  updateStemGains();
+  scheduleEnergyRecompute();
+  renderStems();
+});
+
+document.getElementById('clearSoloBtn').addEventListener('click', () => {
+  stems.forEach(s => s.solo = false);
+  updateStemGains();
+  scheduleEnergyRecompute();
+  renderStems();
+});
+
+function handleStemClick(e) {
+  const btn = e.target.closest('[data-action], [data-preset]');
+  if (!btn) return;
+  const row = e.target.closest('.stem-row');
+  if (!row) return;
+  const idx = parseInt(row.dataset.index);
+  const stem = stems[idx];
+
+  if (btn.dataset.action === 'mute') {
+    stem.muted = !stem.muted;
+    updateStemGains();
+    scheduleEnergyRecompute();
+    renderStems();
+  } else if (btn.dataset.action === 'solo') {
+    stem.solo = !stem.solo;
+    updateStemGains();
+    scheduleEnergyRecompute();
+    renderStems();
+  } else if (btn.dataset.action === 'filter-toggle') {
+    stem.filterOn = !stem.filterOn;
+    reconnectStem(idx);
+    scheduleEnergyRecompute();
+    renderStems();
+  } else if (btn.dataset.preset) {
+    stem.filterOn = true;
+    switch (btn.dataset.preset) {
+      case 'low': stem.lowFreq = 20; stem.highFreq = 300; break;
+      case 'mid': stem.lowFreq = 300; stem.highFreq = 4000; break;
+      case 'high': stem.lowFreq = 4000; stem.highFreq = 20000; break;
+      case 'full': stem.lowFreq = 20; stem.highFreq = 20000; break;
+    }
+    reconnectStem(idx);
+    scheduleEnergyRecompute();
+    renderStems();
+  }
+}
+
+function handleStemInput(e) {
+  const input = e.target;
+  if (!input.dataset.action) return;
+  const row = e.target.closest('.stem-row');
+  if (!row) return;
+  const idx = parseInt(row.dataset.index);
+  const stem = stems[idx];
+
+  if (input.dataset.action === 'volume') {
+    stem.volume = parseFloat(input.value);
+    row.querySelector('.vol-value').textContent = Math.round(stem.volume * 100) + '%';
+    updateStemGains();
+    scheduleEnergyRecompute();
+  } else if (input.dataset.action === 'filter-low') {
+    stem.lowFreq = sliderToFreq(parseFloat(input.value));
+    if (stem.lowFreq > stem.highFreq) {
+      stem.highFreq = stem.lowFreq;
+      row.querySelector('[data-action="filter-high"]').value = freqToSlider(stem.highFreq);
+    }
+    row.querySelector('[data-label="low"]').textContent = formatFreq(stem.lowFreq);
+    row.querySelector('[data-label="high"]').textContent = formatFreq(stem.highFreq);
+    updateStemFilter(idx);
+    scheduleEnergyRecompute();
+  } else if (input.dataset.action === 'filter-high') {
+    stem.highFreq = sliderToFreq(parseFloat(input.value));
+    if (stem.highFreq < stem.lowFreq) {
+      stem.lowFreq = stem.highFreq;
+      row.querySelector('[data-action="filter-low"]').value = freqToSlider(stem.lowFreq);
+    }
+    row.querySelector('[data-label="low"]').textContent = formatFreq(stem.lowFreq);
+    row.querySelector('[data-label="high"]').textContent = formatFreq(stem.highFreq);
+    updateStemFilter(idx);
+    scheduleEnergyRecompute();
+  }
+}
+
+function freqToSlider(freq) {
+  return Math.log2(freq / 20) / Math.log2(20000 / 20);
+}
+function sliderToFreq(val) {
+  return 20 * Math.pow(20000 / 20, val);
+}
+function formatFreq(f) {
+  if (f >= 1000) return (f / 1000).toFixed(1) + 'k';
+  return Math.round(f) + '';
+}
+
+function updateStemGains() {
+  const anySolo = stems.some(s => s.solo);
+  stems.forEach(stem => {
+    if (stem.gainNode) {
+      const effectivelyMuted = stem.muted || (anySolo && !stem.solo);
+      stem.gainNode.gain.value = effectivelyMuted ? 0 : stem.volume;
+    }
+  });
+}
+
+function updateStemFilter(idx) {
+  const stem = stems[idx];
+  if (stem.filterNode && stem.filterOn) {
+    stem.filterNode.highpass.frequency.value = stem.lowFreq;
+    stem.filterNode.lowpass.frequency.value = stem.highFreq;
+  }
+}
+
+function reconnectStem(idx) {
+  const stem = stems[idx];
+  if (!isPlaying || !stem.sourceNode) return;
+  if (stem.gainNode) stem.gainNode.disconnect();
+
+  if (stem.filterOn) {
+    const highpass = audioCtx.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.value = stem.lowFreq;
+    highpass.Q.value = 0.7;
+    const lowpass = audioCtx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = stem.highFreq;
+    lowpass.Q.value = 0.7;
+    stem.gainNode.connect(highpass);
+    highpass.connect(lowpass);
+    lowpass.connect(masterGain);
+    stem.filterNode = { highpass, lowpass };
+  } else {
+    stem.gainNode.connect(masterGain);
+    stem.filterNode = null;
+  }
+}
+
+// ===== Visualization =====
+document.querySelectorAll('.viz-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.viz-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    vizMode = btn.dataset.viz;
+  });
+});
+
+function startVisualization() {
+  if (vizAnimId) cancelAnimationFrame(vizAnimId);
+  const canvas = document.getElementById('vizCanvas');
+  const ctx = canvas.getContext('2d');
+  const rulerCanvas = document.getElementById('rulerCanvas');
+  const rulerCtx = rulerCanvas.getContext('2d');
+
+  function resize() {
+    const dpr = window.devicePixelRatio;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    rulerCanvas.width = rulerCanvas.clientWidth * dpr;
+    rulerCanvas.height = rulerCanvas.clientHeight * dpr;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function draw() {
+    vizAnimId = requestAnimationFrame(draw);
+    const dpr = window.devicePixelRatio;
+    const cw = canvas.clientWidth;
+    const ch = canvas.clientHeight;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0, 0, cw, ch);
+
+    if (!analyserNode || totalDuration === 0) {
+      updateTimeDisplay();
+      return;
+    }
+
+    // Capture spectrogram data only when in spectrogram mode
+    if (isPlaying && vizMode === 'spectrogram') {
+      const t = getCurrentTime();
+      const slot = Math.floor(t / SPECTRO_SLOT_DURATION);
+      if (!spectrogramMap.has(slot)) {
+        const data = new Uint8Array(analyserNode.frequencyBinCount);
+        analyserNode.getByteFrequencyData(data);
+        spectrogramMap.set(slot, data);
+      }
+    }
+
+    // Draw metronome overlay behind viz
+    drawMetronomeOverlay(ctx, cw, ch);
+
+    if (vizMode === 'spectrogram') drawSpectrogram(ctx, cw, ch);
+    else drawEnergy(ctx, cw, ch);
+
+    // Draw loop region on viz
+    drawLoopOverlay(ctx, cw, ch);
+
+    // Draw beat ruler
+    drawBeatRuler(rulerCtx, rulerCanvas.clientWidth, rulerCanvas.clientHeight);
+
+    updateTimeDisplay();
+    updatePlayheads();
+    updateZoomInfo();
+    checkPlaybackEnd();
+  }
+
+  draw();
+}
+
+// Convert time to X pixel position within current view
+function timeToX(t, w) {
+  const vs = getViewStart();
+  const vd = getViewDuration();
+  if (vd === 0) return 0;
+  return ((t - vs) / vd) * w;
+}
+
+// Convert X pixel position to time
+function xToTime(x, w) {
+  const vs = getViewStart();
+  const vd = getViewDuration();
+  return vs + (x / w) * vd;
+}
+
+function drawSpectrogram(ctx, w, h) {
+  // Draw time-aligned spectrogram from spectrogramMap
+  const vs = getViewStart();
+  const vd = getViewDuration();
+  if (vd === 0) return;
+
+  const startSlot = Math.floor(vs / SPECTRO_SLOT_DURATION);
+  const endSlot = Math.ceil((vs + vd) / SPECTRO_SLOT_DURATION);
+  const totalSlots = endSlot - startSlot;
+  if (totalSlots <= 0) return;
+
+  const colW = w / totalSlots;
+  const binsToShow = 256;
+
+  for (let s = startSlot; s < endSlot; s++) {
+    const col = spectrogramMap.get(s);
+    if (!col) continue;
+
+    const x = ((s - startSlot) / totalSlots) * w;
+    const bins = Math.min(col.length, binsToShow);
+    const binH = h / bins;
+
+    for (let y = 0; y < bins; y++) {
+      const val = col[y];
+      if (val < 5) continue;
+      const hue = 240 - (val / 255) * 240;
+      ctx.fillStyle = `hsl(${hue}, 90%, ${20 + (val / 255) * 50}%)`;
+      ctx.fillRect(x, h - (y + 1) * binH, colW + 0.5, binH + 0.5);
+    }
+  }
+}
+
+function drawEnergy(ctx, w, h) {
+  if (!energyData || energyData.length === 0) return;
+
+  const vs = getViewStart();
+  const vd = getViewDuration();
+  if (vd === 0) return;
+
+  const windowDuration = ENERGY_WINDOW_MS / 1000;
+  const startIdx = Math.max(0, Math.floor(vs / windowDuration));
+  const endIdx = Math.min(energyData.length, Math.ceil((vs + vd) / windowDuration));
+  const visibleCount = endIdx - startIdx;
+  if (visibleCount <= 0) return;
+
+  // Downsample: at most ~1 point per pixel (use peak per bucket to preserve transients)
+  const pixelW = Math.ceil(w);
+  const step = Math.max(1, Math.floor(visibleCount / pixelW));
+  const numPoints = Math.ceil(visibleCount / step);
+
+  // Build downsampled array (peak per bucket)
+  const dsValues = new Float32Array(numPoints);
+  const dsIndices = new Int32Array(numPoints); // original index for time mapping
+  for (let p = 0; p < numPoints; p++) {
+    const bucketStart = startIdx + p * step;
+    const bucketEnd = Math.min(bucketStart + step, endIdx);
+    let peak = 0;
+    let peakIdx = bucketStart;
+    for (let i = bucketStart; i < bucketEnd; i++) {
+      if (energyData[i] > peak) {
+        peak = energyData[i];
+        peakIdx = i;
+      }
+    }
+    dsValues[p] = peak;
+    dsIndices[p] = peakIdx;
+  }
+
+  // Draw RMS energy as filled area
+  const gradient = ctx.createLinearGradient(0, h, 0, 0);
+  gradient.addColorStop(0, 'rgba(78, 204, 163, 0.1)');
+  gradient.addColorStop(0.4, 'rgba(78, 204, 163, 0.4)');
+  gradient.addColorStop(0.8, 'rgba(78, 204, 163, 0.6)');
+  gradient.addColorStop(1, 'rgba(240, 192, 64, 0.8)');
+
+  // Fill area under curve
+  ctx.beginPath();
+  ctx.moveTo(timeToX(dsIndices[0] * windowDuration, w), h);
+  for (let p = 0; p < numPoints; p++) {
+    const x = timeToX(dsIndices[p] * windowDuration, w);
+    const y = h - dsValues[p] * h * 0.85;
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(timeToX(dsIndices[numPoints - 1] * windowDuration, w), h);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Draw RMS outline
+  ctx.beginPath();
+  for (let p = 0; p < numPoints; p++) {
+    const x = timeToX(dsIndices[p] * windowDuration, w);
+    const y = h - dsValues[p] * h * 0.85;
+    if (p === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#4ecca3';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Label
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('RMS Energy', 8, 6);
+}
+
+function drawMetronomeOverlay(ctx, w, h) {
+  if (!metronomeOn || totalDuration === 0) return;
+
+  const currentTime = getCurrentTime();
+  const beatDuration = 60 / metroBpm;
+  const vs = getViewStart();
+  const ve = getViewEnd();
+
+  const firstBeat = Math.floor(vs / beatDuration);
+  const lastBeat = Math.ceil(ve / beatDuration);
+
+  for (let b = firstBeat; b <= lastBeat; b++) {
+    const beatTime = b * beatDuration;
+    if (beatTime < vs || beatTime > ve) continue;
+
+    const x = timeToX(beatTime, w);
+    const beatInMeasure = ((b % metroBeatsPerMeasure) + metroBeatsPerMeasure) % metroBeatsPerMeasure;
+
+    let alpha, lineWidth;
+    if (beatInMeasure === 0) {
+      alpha = 0.35;
+      lineWidth = 2.5;
+    } else if (metroBeatsPerMeasure === 4 && beatInMeasure === 2) {
+      alpha = 0.2;
+      lineWidth = 1.5;
+    } else {
+      alpha = 0.1;
+      lineWidth = 1;
+    }
+
+    ctx.strokeStyle = `rgba(240, 192, 64, ${alpha})`;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+
+  // Flash on current beat
+  if (isPlaying) {
+    const currentBeat = currentTime / beatDuration;
+    const beatFrac = currentBeat - Math.floor(currentBeat);
+    if (beatFrac < 0.08) {
+      const beatInMeasure = Math.floor(currentBeat) % metroBeatsPerMeasure;
+      let flashAlpha = (1 - beatFrac / 0.08) * 0.3;
+      if (beatInMeasure === 0) flashAlpha *= 2;
+      ctx.fillStyle = `rgba(240, 192, 64, ${Math.min(flashAlpha, 0.5)})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+}
+
+function drawLoopOverlay(ctx, w, h) {
+  if (loopStartBeat === null || loopEndBeat === null) return;
+  const beatDur = 60 / metroBpm;
+  const loopStartTime = loopStartBeat * beatDur;
+  const loopEndTime = loopEndBeat * beatDur;
+  const x1 = timeToX(loopStartTime, w);
+  const x2 = timeToX(loopEndTime, w);
+  ctx.fillStyle = 'rgba(78, 204, 163, 0.08)';
+  ctx.fillRect(x1, 0, x2 - x1, h);
+  ctx.strokeStyle = 'rgba(78, 204, 163, 0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x1, 0); ctx.lineTo(x1, h);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2, 0); ctx.lineTo(x2, h);
+  ctx.stroke();
+}
+
+// ===== Beat Ruler (canvas-based, synced with zoom) =====
+function drawBeatRuler(ctx, w, h) {
+  const dpr = window.devicePixelRatio;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#0d0d1d';
+  ctx.fillRect(0, 0, w, h);
+
+  if (totalDuration === 0) return;
+
+  const beatDuration = 60 / metroBpm;
+  const vs = getViewStart();
+  const ve = getViewEnd();
+
+  const firstBeat = Math.max(0, Math.floor(vs / beatDuration));
+  const lastBeat = Math.ceil(ve / beatDuration);
+
+  for (let b = firstBeat; b <= lastBeat; b++) {
+    const beatTime = b * beatDuration;
+    const x = timeToX(beatTime, w);
+    const beatInMeasure = ((b % metroBeatsPerMeasure) + metroBeatsPerMeasure) % metroBeatsPerMeasure;
+
+    // Draw beat separator line
+    if (beatInMeasure === 0) {
+      ctx.strokeStyle = 'rgba(240, 192, 64, 0.5)';
+      ctx.lineWidth = 2;
+    } else {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1;
+    }
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+
+    // Draw beat label
+    const nextBeatX = timeToX((b + 1) * beatDuration, w);
+    const cellW = nextBeatX - x;
+
+    if (cellW > 8) { // Only draw text if cell is wide enough
+      ctx.font = `${beatInMeasure === 0 ? 'bold' : 'normal'} ${Math.min(10, cellW * 0.4)}px sans-serif`;
+      ctx.fillStyle = beatInMeasure === 0 ? '#f0c040' : '#666';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      if (beatInMeasure === 0) {
+        const measureNum = Math.floor(b / metroBeatsPerMeasure) + 1;
+        ctx.fillText(measureNum, x + cellW / 2, h / 2);
+      } else if (cellW > 18) {
+        ctx.fillText(beatInMeasure + 1, x + cellW / 2, h / 2);
+      }
+    }
+
+    // Highlight loop region
+    if (loopStartBeat !== null && loopEndBeat !== null) {
+      if (b >= loopStartBeat && b < loopEndBeat) {
+        ctx.fillStyle = 'rgba(78, 204, 163, 0.15)';
+        ctx.fillRect(x, 0, cellW, h);
+      }
+    }
+  }
+
+  // Loop boundary lines
+  if (loopStartBeat !== null && loopEndBeat !== null) {
+    const x1 = timeToX(loopStartBeat * beatDuration, w);
+    const x2 = timeToX(loopEndBeat * beatDuration, w);
+    ctx.strokeStyle = '#4ecca3';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x1, 0); ctx.lineTo(x1, h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2, 0); ctx.lineTo(x2, h); ctx.stroke();
+  }
+}
+
+// ===== Beat Ruler Click (loop) =====
+document.getElementById('beatRuler').addEventListener('click', (e) => {
+  if (totalDuration === 0) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const w = rect.width;
+  const clickTime = xToTime(x, w);
+
+  // Snap to nearest beat
+  const beatDuration = 60 / metroBpm;
+  const beat = Math.round(clickTime / beatDuration);
+  const clampedBeat = Math.max(0, Math.min(beat, Math.ceil(totalDuration / beatDuration)));
+
+  handleBeatClick(clampedBeat);
+});
+
+// ===== Metronome =====
+document.getElementById('metroToggle').addEventListener('click', () => {
+  metronomeOn = !metronomeOn;
+  const btn = document.getElementById('metroToggle');
+  btn.textContent = metronomeOn ? 'ON' : 'OFF';
+  btn.classList.toggle('active', metronomeOn);
+  if (metronomeOn && isPlaying) startMetronome();
+  else stopMetronome();
+});
+
+document.getElementById('metroBpm').addEventListener('input', (e) => {
+  metroBpm = parseInt(e.target.value) || 120;
+});
+
+document.getElementById('metroTimeSig').addEventListener('change', (e) => {
+  const parts = e.target.value.split('/');
+  metroBeatsPerMeasure = parseInt(parts[0]);
+  metroBeatUnit = parseInt(parts[1]);
+});
+
+function startMetronome() {
+  stopMetronome();
+  if (!metronomeOn || !isPlaying) return;
+  nextMetronomeBeatTime = audioCtx.currentTime;
+  metronomeQueue = [];
+  scheduleMetronome();
+  metronomeIntervalId = setInterval(scheduleMetronome, metronomeLookAhead);
+}
+
+function stopMetronome() {
+  if (metronomeIntervalId) {
+    clearInterval(metronomeIntervalId);
+    metronomeIntervalId = null;
+  }
+  metronomeQueue = [];
+}
+
+function scheduleMetronome() {
+  if (!audioCtx || !isPlaying) return;
+  while (nextMetronomeBeatTime < audioCtx.currentTime + metronomeScheduleAhead) {
+    const currentTrackTime = pauseOffset + (nextMetronomeBeatTime - startTime) * playbackRate;
+    if (currentTrackTime > totalDuration) break;
+
+    const beatDuration = 60 / metroBpm;
+    const beatIndex = Math.round(currentTrackTime / beatDuration);
+    const beatInMeasure = ((beatIndex % metroBeatsPerMeasure) + metroBeatsPerMeasure) % metroBeatsPerMeasure;
+
+    let freq = 800;
+    let vol = 0.3;
+    if (beatInMeasure === 0) { freq = 1200; vol = 0.6; }
+    else if (metroBeatsPerMeasure === 4 && beatInMeasure === 2) { freq = 1000; vol = 0.45; }
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = freq;
+    osc.type = 'triangle';
+    gain.gain.setValueAtTime(vol, nextMetronomeBeatTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, nextMetronomeBeatTime + 0.05);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(nextMetronomeBeatTime);
+    osc.stop(nextMetronomeBeatTime + 0.06);
+
+    metronomeQueue.push({ time: nextMetronomeBeatTime, beatInMeasure, trackTime: currentTrackTime });
+    if (metronomeQueue.length > 200) metronomeQueue = metronomeQueue.slice(-100);
+
+    nextMetronomeBeatTime += beatDuration / playbackRate;
+  }
+}
+
+// ===== Loop =====
+function handleBeatClick(beat) {
+  if (loopStartBeat === null) {
+    loopStartBeat = beat;
+    loopEndBeat = null;
+    updateLoopUI();
+  } else if (loopEndBeat === null) {
+    if (beat <= loopStartBeat) {
+      loopStartBeat = beat;
+      updateLoopUI();
+    } else {
+      loopEndBeat = beat;
+      updateLoopUI();
+    }
+  } else {
+    loopStartBeat = beat;
+    loopEndBeat = null;
+    updateLoopUI();
+  }
+}
+
+function updateLoopUI() {
+  const group = document.getElementById('loopGroup');
+  const info = document.getElementById('loopInfo');
+  if (loopStartBeat !== null) {
+    group.style.display = 'flex';
+    if (loopEndBeat !== null) {
+      const startMeasure = Math.floor(loopStartBeat / metroBeatsPerMeasure) + 1;
+      const startBeatInM = (loopStartBeat % metroBeatsPerMeasure) + 1;
+      const endMeasure = Math.floor(loopEndBeat / metroBeatsPerMeasure) + 1;
+      const endBeatInM = (loopEndBeat % metroBeatsPerMeasure) + 1;
+      info.textContent = `${startMeasure}.${startBeatInM} \u2192 ${endMeasure}.${endBeatInM}`;
+    } else {
+      const startMeasure = Math.floor(loopStartBeat / metroBeatsPerMeasure) + 1;
+      const startBeatInM = (loopStartBeat % metroBeatsPerMeasure) + 1;
+      info.textContent = `Start: ${startMeasure}.${startBeatInM} \u2014 click end beat`;
+    }
+  } else {
+    group.style.display = 'none';
+  }
+}
+
+document.getElementById('loopClearBtn').addEventListener('click', () => {
+  loopStartBeat = null;
+  loopEndBeat = null;
+  updateLoopUI();
+});
+
+function startLoopCheck() {
+  stopLoopCheck();
+  loopCheckIntervalId = setInterval(() => {
+    if (!isPlaying || loopStartBeat === null || loopEndBeat === null) return;
+    const beatDur = 60 / metroBpm;
+    const loopEnd = loopEndBeat * beatDur;
+    const current = getCurrentTime();
+    if (current >= loopEnd) {
+      seekTo(loopStartBeat * beatDur);
+    }
+  }, 20);
+}
+
+function stopLoopCheck() {
+  if (loopCheckIntervalId) {
+    clearInterval(loopCheckIntervalId);
+    loopCheckIntervalId = null;
+  }
+}
+
+// ===== Playhead & Time =====
+function updateTimeDisplay() {
+  const t = getCurrentTime();
+  const mins = Math.floor(t / 60);
+  const secs = Math.floor(t % 60);
+  const ms = Math.floor((t % 1) * 10);
+  document.getElementById('timeDisplay').textContent =
+    `${mins}:${secs.toString().padStart(2, '0')}.${ms}`;
+}
+
+function updatePlayheads() {
+  if (totalDuration === 0) return;
+  const t = getCurrentTime();
+  const vizContainer = document.getElementById('vizContainer');
+  const w = vizContainer.clientWidth;
+  const xPx = timeToX(t, w);
+  const pct = (xPx / w) * 100;
+  const clamped = Math.max(0, Math.min(pct, 100));
+  document.getElementById('vizPlayhead').style.left = clamped + '%';
+  document.getElementById('rulerPlayhead').style.left = clamped + '%';
+}
+
+function updateZoomInfo() {
+  const el = document.getElementById('zoomInfo');
+  if (totalDuration === 0) {
+    el.textContent = '';
+    return;
+  }
+  const vd = getViewDuration();
+  const zoomPct = Math.round((totalDuration / vd) * 100);
+  if (zoomPct <= 105) {
+    el.textContent = '';
+  } else {
+    const vs = getViewStart();
+    const ve = getViewEnd();
+    el.textContent = `${formatTime(vs)} - ${formatTime(ve)} (${zoomPct}%)`;
+  }
+}
+
+function formatTime(t) {
+  const mins = Math.floor(t / 60);
+  const secs = Math.floor(t % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function checkPlaybackEnd() {
+  if (!isPlaying) return;
+  const t = getCurrentTime();
+  if (t >= totalDuration) {
+    if (loopStartBeat !== null && loopEndBeat !== null) {
+      const beatDur = 60 / metroBpm;
+      seekTo(loopStartBeat * beatDur);
+    } else {
+      stopPlayback();
+    }
+  }
+}
+
+// ===== Zoom & Pan =====
+const vizContainer = document.getElementById('vizContainer');
+const beatRuler = document.getElementById('beatRuler');
+
+// Scroll wheel to zoom (on both viz and ruler)
+function handleWheel(e) {
+  if (totalDuration === 0) return;
+  e.preventDefault();
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const w = rect.width;
+
+  // Time at mouse position before zoom
+  const mouseTime = xToTime(mouseX, w);
+
+  // Zoom factor
+  const zoomFactor = e.deltaY > 0 ? 1.15 : (1 / 1.15);
+  let newVd = getViewDuration() * zoomFactor;
+
+  // Clamp: min ~0.5s, max = total duration
+  newVd = Math.max(0.5, Math.min(newVd, totalDuration));
+
+  // Adjust viewStart so the time under the mouse stays in the same screen position
+  const mouseRatio = mouseX / w;
+  let newVs = mouseTime - mouseRatio * newVd;
+  newVs = Math.max(0, Math.min(newVs, totalDuration - newVd));
+
+  viewStart = newVs;
+  viewDuration = newVd >= totalDuration * 0.99 ? 0 : newVd; // snap to "show all" when nearly full
+}
+
+vizContainer.addEventListener('wheel', handleWheel, { passive: false });
+beatRuler.addEventListener('wheel', handleWheel, { passive: false });
+
+// Right-click drag to pan (on both viz and ruler)
+function handlePanStart(e) {
+  if (e.button !== 2) return; // right click only
+  e.preventDefault();
+  isPanning = true;
+  panStartX = e.clientX;
+  panStartViewStart = viewStart;
+  document.body.style.cursor = 'grabbing';
+}
+
+function handlePanMove(e) {
+  if (!isPanning) return;
+  e.preventDefault();
+  const rect = vizContainer.getBoundingClientRect();
+  const dx = e.clientX - panStartX;
+  const vd = getViewDuration();
+  const timeDelta = -(dx / rect.width) * vd;
+  let newVs = panStartViewStart + timeDelta;
+  newVs = Math.max(0, Math.min(newVs, totalDuration - vd));
+  viewStart = newVs;
+}
+
+function handlePanEnd(e) {
+  if (!isPanning) return;
+  isPanning = false;
+  document.body.style.cursor = '';
+}
+
+vizContainer.addEventListener('mousedown', handlePanStart);
+beatRuler.addEventListener('mousedown', handlePanStart);
+document.addEventListener('mousemove', handlePanMove);
+document.addEventListener('mouseup', handlePanEnd);
+
+// Prevent context menu on right-click in viz/ruler
+vizContainer.addEventListener('contextmenu', (e) => e.preventDefault());
+beatRuler.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// Click on visualization to seek (left click only)
+document.getElementById('vizCanvas').addEventListener('click', (e) => {
+  if (totalDuration === 0 || isPanning) return;
+  if (e.button !== 0) return;
+  const rect = e.target.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const time = xToTime(x, rect.width);
+  seekTo(Math.max(0, Math.min(time, totalDuration)));
+});
+
+// Double-click on beat ruler to seek
+beatRuler.addEventListener('dblclick', (e) => {
+  if (totalDuration === 0) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const time = xToTime(x, rect.width);
+  seekTo(Math.max(0, Math.min(time, totalDuration)));
+});
+
+// ===== Keyboard Shortcuts =====
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (isPlaying) pausePlayback();
+    else startPlayback();
+  }
+  // Home to reset zoom
+  if (e.code === 'Home') {
+    viewStart = 0;
+    viewDuration = 0;
+  }
+});
+
+// Initial viz
+startVisualization();
+</script>
+</body>
+</html>
