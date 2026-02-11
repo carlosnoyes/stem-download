@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Planning Center Audio Downloader",
+  "version": "1.1.0",
+  "description": "Download all audio stems from Planning Center Online as a ZIP file",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://services.planningcenteronline.com/*",
+    "*://planningcenteronline.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://services.planningcenteronline.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Planning Center Audio Downloader"
+  },
+  "icons": {
+    "16": "icons/icon-16.svg",
+    "48": "icons/icon-16.svg",
+    "128": "icons/icon-16.svg"
+  }
+}
