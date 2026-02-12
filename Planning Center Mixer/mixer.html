@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planning Center Mixer</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --accent: #e94560;
+    --accent2: #533483;
+    --text: #eee;
+    --text-dim: #999;
+    --green: #4ecca3;
+    --yellow: #f0c040;
+    --border: #2a2a4a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .load-btn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .load-btn:hover { background: #d63350; }
+
+  /* Transport Bar */
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .transport-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .transport-btn:hover { background: var(--accent2); }
+  .transport-btn.active { background: var(--accent); border-color: var(--accent); }
+
+  .time-display {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1.1rem;
+    background: #111;
+    padding: 6px 14px;
+    border-radius: 6px;
+    min-width: 100px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .speed-group, .viz-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+  }
+
+  .speed-group label, .viz-group label, .metro-group label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-right: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .speed-btn, .viz-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .speed-btn.active, .viz-btn.active {
+    background: var(--accent2);
+    color: white;
+    border-color: var(--accent2);
+  }
+
+  /* Metronome Controls */
+  .metro-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+
+  .out-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+
+  .metro-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .metro-toggle.active {
+    background: var(--yellow);
+    color: #111;
+    border-color: var(--yellow);
+    font-weight: 600;
+  }
+
+  .metro-input {
+    background: #111;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    width: 55px;
+    text-align: center;
+    font-family: 'Consolas', monospace;
+  }
+
+  .metro-select {
+    background: #111;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  /* Loop indicator */
+  .loop-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+
+  .loop-info {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .loop-clear-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+  .loop-clear-btn:hover { background: var(--accent); color: white; }
+
+  /* Visualization */
+  .viz-container {
+    position: relative;
+    margin: 0;
+    background: #0a0a1a;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .viz-container canvas {
+    display: block;
+    width: 100%;
+    height: 200px;
+  }
+
+  /* Beat ruler */
+  .beat-ruler {
+    height: 28px;
+    background: #0d0d1d;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .beat-ruler canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .playhead-line {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Stems area */
+  .stems-container {
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stems-container .empty-msg {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 1rem;
+  }
+
+  .stem-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    transition: opacity 0.3s;
+  }
+  .stem-row.muted { opacity: 0.45; }
+
+  .stem-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 140px;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stem-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    background: #333;
+    color: #777;
+  }
+  .stem-btn.mute-on {
+    background: #c0392b;
+    color: white;
+  }
+  .stem-btn.solo-on {
+    background: var(--yellow);
+    color: #111;
+  }
+
+  .stem-volume-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 160px;
+  }
+
+  .stem-volume-group label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+
+  .stem-volume-group .vol-value {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    min-width: 30px;
+    text-align: right;
+    font-family: monospace;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: #333;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--green);
+    cursor: pointer;
+  }
+
+  .stem-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .stem-filter-group label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .filter-toggle {
+    background: #333;
+    border: none;
+    color: #777;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: all 0.2s;
+  }
+  .filter-toggle.active {
+    background: var(--accent2);
+    color: white;
+  }
+
+  .filter-range-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .freq-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    min-width: 42px;
+    text-align: center;
+    font-family: monospace;
+  }
+
+  .filter-preset-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    transition: all 0.2s;
+  }
+  .filter-preset-btn:hover { background: var(--accent2); color: white; }
+
+  /* Mute/Unmute All bar */
+  .stems-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 8px 24px 0;
+  }
+
+  .stems-toolbar button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+  }
+  .stems-toolbar button:hover { background: var(--accent2); color: white; }
+
+  /* Master volume */
+  .master-volume {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+
+  .master-volume label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  /* Zoom info */
+  .zoom-info {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    pointer-events: none;
+    z-index: 5;
+    font-family: monospace;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Planning Center Mixer</h1>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="load-btn" id="loadFolderBtn">Load Stems Folder</button>
+    <button class="load-btn" style="background:var(--surface2);" id="loadFilesBtn">Load Files</button>
+  </div>
+</header>
+
+<div class="transport">
+  <button class="transport-btn" id="playBtn" title="Play/Pause">&#9654;</button>
+  <button class="transport-btn" id="stopBtn" title="Stop">&#9632;</button>
+  <div class="time-display" id="timeDisplay">0:00.0</div>
+
+  <div class="speed-group">
+    <label>Speed</label>
+    <button class="speed-btn" data-speed="0.25">0.25x</button>
+    <button class="speed-btn" data-speed="0.5">0.5x</button>
+    <button class="speed-btn active" data-speed="1">1x</button>
+    <button class="speed-btn" data-speed="2">2x</button>
+  </div>
+
+  <div class="viz-group">
+    <label>Viz</label>
+    <button class="viz-btn active" data-viz="energy">Energy</button>
+    <button class="viz-btn" data-viz="spectrogram">Spectro</button>
+    <button class="viz-btn" data-viz="both">Both</button>
+  </div>
+
+  <div class="metro-group">
+    <label>Metronome</label>
+    <button class="metro-toggle" id="metroToggle">OFF</button>
+    <input type="number" class="metro-input" id="metroBpm" value="120" min="20" max="300" title="BPM">
+    <label style="font-size:0.7rem;">BPM</label>
+    <button class="metro-toggle" id="autoBpmBtn" title="Auto-detect BPM from audio energy" style="font-size:0.8rem;">Auto</button>
+    <select class="metro-select" id="metroTimeSig" title="Time Signature">
+      <option value="4/4">4/4</option>
+      <option value="3/4">3/4</option>
+      <option value="6/8">6/8</option>
+      <option value="8/8">8/8</option>
+      <option value="2/4">2/4</option>
+      <option value="5/4">5/4</option>
+      <option value="7/8">7/8</option>
+    </select>
+  </div>
+
+  <div class="out-filter-group">
+    <label style="font-size:0.75rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Out Filter</label>
+    <button class="metro-toggle active" id="outLowBtn">Low</button>
+    <button class="metro-toggle active" id="outMidBtn">Mid</button>
+    <button class="metro-toggle active" id="outHighBtn">High</button>
+  </div>
+
+  <div class="loop-group" id="loopGroup" style="display:none;">
+    <label style="font-size:0.7rem;color:var(--green);">LOOP</label>
+    <span class="loop-info" id="loopInfo"></span>
+    <button class="loop-clear-btn" id="loopClearBtn">Clear Loop</button>
+  </div>
+
+  <div class="master-volume">
+    <label>Master</label>
+    <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.5" style="width:100px;">
+    <span style="font-size:0.7rem;color:var(--text-dim);min-width:40px;font-family:monospace;" id="masterVolVal">50%</span>
+  </div>
+</div>
+
+<div class="viz-container" id="vizContainer">
+  <canvas id="vizCanvas"></canvas>
+  <div class="playhead-line" id="vizPlayhead" style="left:0;"></div>
+  <div class="zoom-info" id="zoomInfo"></div>
+</div>
+
+<div class="beat-ruler" id="beatRuler">
+  <canvas id="rulerCanvas"></canvas>
+  <div class="playhead-line" id="rulerPlayhead" style="left:0;"></div>
+</div>
+
+<div class="stems-toolbar" id="stemsToolbar" style="display:none;">
+  <button id="muteAllBtn">Mute All</button>
+  <button id="unmuteAllBtn">Unmute All</button>
+  <button id="clearSoloBtn">Clear Solo</button>
+</div>
+
+<div class="stems-container" id="stemsContainer">
+  <div class="empty-msg">Scan stems from Planning Center using the extension popup, or load files manually.<br><small>Supports .mp3, .wav, .ogg, .flac, .aac, .m4a, .webm</small></div>
+</div>
+
+<script src="mixer.js"></script>
+<!-- JS moved to mixer.js (Chrome MV3 CSP blocks inline scripts) -->
+</body>
+</html>

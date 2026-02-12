@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 380px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        h2 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            color: #eee;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #scanBtn {
+            background: #2196F3;
+            color: white;
+        }
+        #scanBtn:hover { background: #0b7dda; }
+        #scanBtn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        #mixBtn {
+            background: #e94560;
+            color: white;
+        }
+        #mixBtn:hover { background: #d63350; }
+        #mixBtn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        #downloadBtn {
+            background: #4ecca3;
+            color: #111;
+        }
+        #downloadBtn:hover { background: #3db890; }
+        #downloadBtn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+        }
+        .action-row button { flex: 1; }
+
+        #status {
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.4;
+            background: #16213e;
+            border-left: 4px solid #2196F3;
+            color: #ccc;
+            min-height: 20px;
+        }
+
+        #status.success { border-left-color: #4ecca3; color: #4ecca3; }
+        #status.error { border-left-color: #e94560; color: #e94560; }
+        #status.loading { border-left-color: #2196F3; color: #90caf9; }
+
+        .files-list {
+            background: #16213e;
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+
+        .files-list div {
+            padding: 4px 0;
+            color: #999;
+            word-break: break-word;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar .fill {
+            height: 100%;
+            background: #4ecca3;
+            border-radius: 2px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .divider {
+            border-top: 1px solid #2a2a4a;
+            margin: 4px 0;
+        }
+
+        #openMixerBtn {
+            background: var(--surface2, #0f3460);
+            color: #ccc;
+            border: 1px solid #2a2a4a;
+            font-size: 13px;
+        }
+        #openMixerBtn:hover { background: #1a4a7a; color: #eee; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a2e; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <h2>Planning Center Mixer</h2>
+            <div class="subtitle">Scan for stems, then mix or download</div>
+        </div>
+
+        <button id="scanBtn">Scan for Audio Files</button>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="fill" id="progressFill"></div>
+        </div>
+
+        <div class="action-row">
+            <button id="mixBtn" disabled>Open in Mixer</button>
+            <button id="downloadBtn" disabled>Download All</button>
+        </div>
+
+        <div id="status">Navigate to a Planning Center plan and open a song, then click Scan.</div>
+
+        <div class="divider"></div>
+        <button id="openMixerBtn">Open Mixer (Load Files Manually)</button>
+
+        <div id="filesList" style="display: none;">
+            <div class="files-list" id="files"></div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

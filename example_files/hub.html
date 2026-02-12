@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!-- saved from url=(0051)https://pco-cross-storage.s3.amazonaws.com/hub.html -->
+<html style="--vsc-domain: &quot;pco-cross-storage.s3.amazonaws.com&quot;;"><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    <script>
+      var source;
+      var origin;
+
+      window.addEventListener('message', receiveMessageFromParent, false);
+      window.addEventListener('storage', receiveMessageFromAnotherWindow, false);
+
+      function receiveMessageFromParent(event) {
+        source = event.source;
+        origin = event.origin;
+        
+        Object.keys(event.data).forEach(function(key) {
+          window.localStorage.setItem(key, event.data[key]);
+        });
+      }
+
+      function receiveMessageFromAnotherWindow(event) {
+        dispatchMessageToParent(event.key, event.newValue);
+      }
+
+      function dispatchMessageToParent(key, newValue) {        
+        if (source && origin) {
+          var message = {}
+          message[key] = newValue
+          source.postMessage(message, origin);
+        }
+      }
+    </script>
+  </head>
+  <body>
+  
+
+</body></html>
