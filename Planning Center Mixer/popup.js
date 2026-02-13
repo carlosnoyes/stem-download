@@ -1,5 +1,6 @@
 let audioFiles = [];
 let currentTabId = null;
+let songTitle = null;
 
 const statusEl = document.getElementById('status');
 const scanBtn = document.getElementById('scanBtn');
@@ -94,6 +95,19 @@ scanBtn.addEventListener('click', async () => {
         if (response && response.files && response.files.length > 0) {
             audioFiles = response.files;
 
+            // Try to get the song title from the page
+            try {
+                const titleResp = await sendToContent(tab.id, { action: 'getSongTitle' });
+                if (titleResp && titleResp.title) {
+                    songTitle = titleResp.title;
+                    const songNameEl = document.getElementById('songName');
+                    songNameEl.textContent = `\u266B ${songTitle}`;
+                    songNameEl.style.display = 'block';
+                }
+            } catch (e) {
+                console.log('Could not get song title:', e.message);
+            }
+
             filesContainer.innerHTML = audioFiles
                 .map(f => `<div>\u266B ${f.name}</div>`)
                 .join('');
@@ -146,7 +160,10 @@ downloadBtn.addEventListener('click', async () => {
                 continue;
             }
 
-            const fileName = file.name.replace(/[<>:"/\\|?*]/g, '_');
+            const baseName = file.name.replace(/[<>:"/\\|?*]/g, '_');
+            const fileName = songTitle
+                ? `${songTitle.replace(/[<>:"/\\|?*]/g, '_')} - ${baseName}`
+                : baseName;
             await new Promise((resolve, reject) => {
                 chrome.runtime.sendMessage({
                     action: 'saveFile',
@@ -192,10 +209,11 @@ mixBtn.addEventListener('click', async () => {
     mixBtn.disabled = true;
     updateStatus('Opening mixer...', 'loading');
 
-    // Pass file list and source tab ID via URL hash
+    // Pass file list, source tab ID, and song title via URL hash
     const payload = {
         sourceTabId: currentTabId,
-        files: audioFiles
+        files: audioFiles,
+        songTitle: songTitle || null
     };
     const hash = encodeURIComponent(JSON.stringify(payload));
     const mixerUrl = chrome.runtime.getURL('mixer.html') + '#' + hash;

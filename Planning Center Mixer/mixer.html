@@ -460,7 +460,10 @@
 <body>
 
 <header>
-  <h1>Planning Center Mixer</h1>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <h1>Planning Center Mixer</h1>
+    <span id="songTitle" style="display:none;font-size:0.95rem;color:var(--green);font-weight:600;padding:4px 12px;background:var(--surface2);border-radius:6px;"></span>
+  </div>
   <div style="display:flex;gap:8px;align-items:center;">
     <button class="load-btn" id="loadFolderBtn">Load Stems Folder</button>
     <button class="load-btn" style="background:var(--surface2);" id="loadFilesBtn">Load Files</button>

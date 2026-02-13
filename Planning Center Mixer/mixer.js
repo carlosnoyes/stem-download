@@ -2059,6 +2059,14 @@ async function loadStemsFromExtension() {
 
   if (!info || !info.files || info.files.length === 0 || !info.sourceTabId) return;
 
+  // Display song title if available
+  if (info.songTitle) {
+    const titleEl = document.getElementById('songTitle');
+    titleEl.textContent = info.songTitle;
+    titleEl.style.display = 'inline-block';
+    document.title = `${info.songTitle} — Planning Center Mixer`;
+  }
+
   // Clear the hash so a page refresh doesn't re-fetch
   history.replaceState(null, '', window.location.pathname);
 

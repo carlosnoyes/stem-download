@@ -71,6 +71,27 @@ const clickFilesTab = () => {
     return false;
 };
 
+const getSongTitle = () => {
+    // Try the plan item title input (visible when a song drawer is open)
+    const titleInput = document.querySelector('input[data-testid="plan-item-title-input"]');
+    if (titleInput && titleInput.value) return titleInput.value.trim();
+
+    // Fallback: look for the "View song" drawer header next to the song title
+    const headers = document.querySelectorAll('h3');
+    for (const h of headers) {
+        if (h.textContent.trim() === 'View song') {
+            // The title input should be a sibling in the same drawer
+            const drawer = h.closest('[class]');
+            if (drawer) {
+                const input = drawer.parentElement?.querySelector('input[readonly]');
+                if (input && input.value) return input.value.trim();
+            }
+        }
+    }
+
+    return null;
+};
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'ping') {
         sendResponse({ alive: true });
@@ -80,6 +101,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'clickFilesTab') {
         const clicked = clickFilesTab();
         sendResponse({ clicked });
+        return true;
+    }
+
+    if (request.action === 'getSongTitle') {
+        const title = getSongTitle();
+        sendResponse({ title });
         return true;
     }
 
